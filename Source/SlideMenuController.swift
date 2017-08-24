@@ -77,14 +77,27 @@ open class SlideMenuController: UIViewController, UIGestureRecognizerDelegate {
     
     open var opacityView = UIView()
     @available(iOS 10, *)
-    open lazy var blurAnimator: UIViewPropertyAnimator? = {
+    fileprivate lazy var blurAnimator: UIViewPropertyAnimator? = {
         if let blurView = self.opacityView as? UIVisualEffectView,
             let blurEffect = SlideMenuOptions.blurEffect {
-            blurView.effect = nil
-            let animator = UIViewPropertyAnimator(duration: 1, curve: .linear) {
-                blurView.effect = blurEffect
+            let animator: UIViewPropertyAnimator = UIViewPropertyAnimator(duration: 1, curve: .linear)
+            func addAnimation(startPos: UIViewAnimatingPosition = UIViewAnimatingPosition.start) {
+                blurView.effect = nil
+                animator.addAnimations {
+                    blurView.effect = blurEffect
+                }
+                animator.addCompletion { (pos) in
+                    DispatchQueue.main.async {
+                        addAnimation(startPos: pos)
+                    }
+                }
+                animator.startAnimation()
+                animator.pauseAnimation()
+                if startPos == .end {
+                    animator.fractionComplete = 1
+                }
             }
-            animator.pauseAnimation()
+            addAnimation()
             return animator
         } else {
             return nil
@@ -439,7 +452,7 @@ open class SlideMenuController: UIViewController, UIGestureRecognizerDelegate {
                 
                 let velocity:CGPoint = panGesture.velocity(in: panGesture.view)
                 let panInfo: PanInfo = panLeftResultInfoForVelocity(velocity)
-                
+
                 if panInfo.action == .open {
                     if !LeftPanState.wasHiddenAtStartOfPan {
                         leftViewController?.beginAppearanceTransition(true, animated: true)
@@ -453,7 +466,7 @@ open class SlideMenuController: UIViewController, UIGestureRecognizerDelegate {
                     }
                     closeLeftWithVelocity(panInfo.velocity)
                     setCloseWindowLevel()
-                    
+
                     track(.leftFlickClose)
 
                 }
@@ -559,14 +572,28 @@ open class SlideMenuController: UIViewController, UIGestureRecognizerDelegate {
         }
         
         addShadowToView(leftContainerView)
-        
+
+        var useRegularBlurAnimation: Bool = true
+        if #available(iOS 10, *), let animator = blurAnimator {
+            useRegularBlurAnimation = false
+            if animator.isRunning {
+                animator.pauseAnimation()
+            }
+            animator.fractionComplete = getOpenedLeftRatio()
+            animator.isReversed = false
+            let durationFactor = CGFloat(duration) * (1 - animator.fractionComplete)
+            animator.continueAnimation(withTimingParameters: nil, durationFactor: durationFactor)
+        }
+
         UIView.animate(withDuration: duration, delay: 0.0, options: SlideMenuOptions.animationOptions, animations: { [weak self]() -> Void in
             if let strongSelf = self {
                 strongSelf.leftContainerView.frame = frame
 
-                if let blurView = strongSelf.opacityView as? UIVisualEffectView, let blurEffect = SlideMenuOptions.blurEffect {
+                if useRegularBlurAnimation,
+                    let blurView = strongSelf.opacityView as? UIVisualEffectView,
+                    let blurEffect = SlideMenuOptions.blurEffect {
                     blurView.effect = blurEffect
-                } else {
+                } else if useRegularBlurAnimation {
                     strongSelf.opacityView.layer.opacity = Float(SlideMenuOptions.contentViewOpacity)
                 }
               
@@ -590,7 +617,7 @@ open class SlideMenuController: UIViewController, UIGestureRecognizerDelegate {
         
         var frame = rightContainerView.frame
         frame.origin.x = finalXOrigin
-    
+
         var duration: TimeInterval = Double(SlideMenuOptions.animationDuration)
         if velocity != 0.0 {
             duration = Double(fabs(xOrigin - view.bounds.width) / velocity)
@@ -598,13 +625,27 @@ open class SlideMenuController: UIViewController, UIGestureRecognizerDelegate {
         }
     
         addShadowToView(rightContainerView)
+
+        var useRegularBlurAnimation: Bool = true
+        if #available(iOS 10, *), let animator = blurAnimator {
+            useRegularBlurAnimation = false
+            if animator.isRunning {
+                animator.pauseAnimation()
+            }
+            animator.fractionComplete = getOpenedRightRatio()
+            animator.isReversed = false
+            let durationFactor = CGFloat(duration) * (1 - animator.fractionComplete)
+            animator.continueAnimation(withTimingParameters: nil, durationFactor: durationFactor)
+        }
     
         UIView.animate(withDuration: duration, delay: 0.0, options: SlideMenuOptions.animationOptions, animations: { [weak self]() -> Void in
             if let strongSelf = self {
                 strongSelf.rightContainerView.frame = frame
-                if let blurView = strongSelf.opacityView as? UIVisualEffectView, let blurEffect = SlideMenuOptions.blurEffect {
+                if useRegularBlurAnimation,
+                    let blurView = strongSelf.opacityView as? UIVisualEffectView,
+                    let blurEffect = SlideMenuOptions.blurEffect {
                     blurView.effect = blurEffect
-                } else {
+                } else if useRegularBlurAnimation {
                     strongSelf.opacityView.layer.opacity = Float(SlideMenuOptions.contentViewOpacity)
                 }
             
@@ -632,13 +673,27 @@ open class SlideMenuController: UIViewController, UIGestureRecognizerDelegate {
             duration = Double(fabs(xOrigin - finalXOrigin) / velocity)
             duration = Double(fmax(0.1, fmin(1.0, duration)))
         }
+
+        var useRegularBlurAnimation: Bool = true
+        if #available(iOS 10, *), let animator = blurAnimator {
+            useRegularBlurAnimation = false
+            if animator.isRunning {
+                animator.pauseAnimation()
+            }
+            animator.fractionComplete = getOpenedLeftRatio()
+            animator.isReversed = true
+            let durationFactor = CGFloat(duration) * (1 - animator.fractionComplete)
+            animator.continueAnimation(withTimingParameters: nil, durationFactor: durationFactor)
+        }
         
         UIView.animate(withDuration: duration, delay: 0.0, options: SlideMenuOptions.animationOptions, animations: { [weak self]() -> Void in
             if let strongSelf = self {
                 strongSelf.leftContainerView.frame = frame
-                if let blurView = strongSelf.opacityView as? UIVisualEffectView, SlideMenuOptions.blurEffect != nil {
+                if useRegularBlurAnimation,
+                    let blurView = strongSelf.opacityView as? UIVisualEffectView,
+                    SlideMenuOptions.blurEffect != nil {
                     blurView.effect = nil
-                } else {
+                } else if useRegularBlurAnimation {
                     strongSelf.opacityView.layer.opacity = 0
                 }
                 strongSelf.mainContainerView.transform = CGAffineTransform(scaleX: 1.0, y: 1.0)
@@ -667,13 +722,26 @@ open class SlideMenuController: UIViewController, UIGestureRecognizerDelegate {
             duration = Double(fabs(xOrigin - view.bounds.width) / velocity)
             duration = Double(fmax(0.1, fmin(1.0, duration)))
         }
+
+        var useRegularBlurAnimation: Bool = true
+        if #available(iOS 10, *), let animator = blurAnimator {
+            useRegularBlurAnimation = false
+            if animator.isRunning {
+                animator.pauseAnimation()
+            }
+            animator.fractionComplete = getOpenedRightRatio()
+            animator.isReversed = true
+            let durationFactor = CGFloat(duration) * (1 - animator.fractionComplete)
+            animator.continueAnimation(withTimingParameters: nil, durationFactor: durationFactor)
+        }
     
         UIView.animate(withDuration: duration, delay: 0.0, options: SlideMenuOptions.animationOptions, animations: { [weak self]() -> Void in
             if let strongSelf = self {
                 strongSelf.rightContainerView.frame = frame
-                if let blurView = strongSelf.opacityView as? UIVisualEffectView, SlideMenuOptions.blurEffect != nil {
+                if useRegularBlurAnimation,
+                    let blurView = strongSelf.opacityView as? UIVisualEffectView, SlideMenuOptions.blurEffect != nil {
                     blurView.effect = nil
-                } else {
+                } else if useRegularBlurAnimation {
                     strongSelf.opacityView.layer.opacity = 0
                 }
                 strongSelf.mainContainerView.transform = CGAffineTransform(scaleX: 1.0, y: 1.0)
@@ -891,6 +959,9 @@ open class SlideMenuController: UIViewController, UIGestureRecognizerDelegate {
         let openedLeftRatio: CGFloat = getOpenedLeftRatio()
         if let blurView = opacityView as? UIVisualEffectView, let blurEffect = SlideMenuOptions.blurEffect {
             if #available(iOS 10.0, *), let animator = blurAnimator {
+                if animator.isRunning {
+                    animator.pauseAnimation()
+                }
                 animator.fractionComplete = openedLeftRatio
             } else {
                 blurView.effect = openedLeftRatio < 0.2 ? nil : blurEffect
@@ -906,6 +977,9 @@ open class SlideMenuController: UIViewController, UIGestureRecognizerDelegate {
         let openedRightRatio: CGFloat = getOpenedRightRatio()
         if let blurView = opacityView as? UIVisualEffectView, let blurEffect = SlideMenuOptions.blurEffect {
             if #available(iOS 10.0, *), let animator = blurAnimator {
+                if animator.isRunning {
+                    animator.pauseAnimation()
+                }
                 animator.fractionComplete = openedRightRatio
             } else {
                 blurView.effect = openedRightRatio < 0.2 ? nil : blurEffect
