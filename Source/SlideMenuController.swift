@@ -573,6 +573,7 @@ open class SlideMenuController: UIViewController, UIGestureRecognizerDelegate {
         
         addShadowToView(leftContainerView)
 
+        opacityView.isHidden = false
         var useRegularBlurAnimation: Bool = true
         if #available(iOS 10, *), let animator = blurAnimator {
             useRegularBlurAnimation = false
@@ -626,6 +627,7 @@ open class SlideMenuController: UIViewController, UIGestureRecognizerDelegate {
     
         addShadowToView(rightContainerView)
 
+        opacityView.isHidden = false
         var useRegularBlurAnimation: Bool = true
         if #available(iOS 10, *), let animator = blurAnimator {
             useRegularBlurAnimation = false
@@ -674,6 +676,7 @@ open class SlideMenuController: UIViewController, UIGestureRecognizerDelegate {
             duration = Double(fmax(0.1, fmin(1.0, duration)))
         }
 
+        opacityView.isHidden = false
         var useRegularBlurAnimation: Bool = true
         if #available(iOS 10, *), let animator = blurAnimator {
             useRegularBlurAnimation = false
@@ -682,6 +685,9 @@ open class SlideMenuController: UIViewController, UIGestureRecognizerDelegate {
             }
             animator.fractionComplete = getOpenedLeftRatio()
             animator.isReversed = true
+            animator.addCompletion({ [weak self] _ in
+                self?.opacityView.isHidden = true
+            })
             let durationFactor = CGFloat(duration) * (1 - animator.fractionComplete)
             animator.continueAnimation(withTimingParameters: nil, durationFactor: durationFactor)
         }
@@ -723,6 +729,7 @@ open class SlideMenuController: UIViewController, UIGestureRecognizerDelegate {
             duration = Double(fmax(0.1, fmin(1.0, duration)))
         }
 
+        opacityView.isHidden = false
         var useRegularBlurAnimation: Bool = true
         if #available(iOS 10, *), let animator = blurAnimator {
             useRegularBlurAnimation = false
@@ -731,6 +738,9 @@ open class SlideMenuController: UIViewController, UIGestureRecognizerDelegate {
             }
             animator.fractionComplete = getOpenedRightRatio()
             animator.isReversed = true
+            animator.addCompletion({ [weak self] _ in
+                self?.opacityView.isHidden = true
+            })
             let durationFactor = CGFloat(duration) * (1 - animator.fractionComplete)
             animator.continueAnimation(withTimingParameters: nil, durationFactor: durationFactor)
         }
@@ -1022,6 +1032,7 @@ open class SlideMenuController: UIViewController, UIGestureRecognizerDelegate {
     fileprivate func removeContentOpacity() {
         if let blurView = opacityView as? UIVisualEffectView, SlideMenuOptions.blurEffect != nil {
             blurView.effect = nil
+            blurView.isHidden = true
         } else {
             opacityView.layer.opacity = 0.0
         }
@@ -1031,6 +1042,7 @@ open class SlideMenuController: UIViewController, UIGestureRecognizerDelegate {
     fileprivate func addContentOpacity() {
         if let blurView = opacityView as? UIVisualEffectView, let blurEffect = SlideMenuOptions.blurEffect {
             blurView.effect = blurEffect
+            blurView.isHidden = false
         } else {
             opacityView.layer.opacity = Float(SlideMenuOptions.contentViewOpacity)
         }
@@ -1094,6 +1106,7 @@ open class SlideMenuController: UIViewController, UIGestureRecognizerDelegate {
         leftContainerView.frame = frame
         if let blurView = opacityView as? UIVisualEffectView, SlideMenuOptions.blurEffect != nil {
             blurView.effect = nil
+            blurView.isHidden = true
         } else {
             opacityView.layer.opacity = 0.0
         }
@@ -1110,6 +1123,7 @@ open class SlideMenuController: UIViewController, UIGestureRecognizerDelegate {
         rightContainerView.frame = frame
         if let blurView = opacityView as? UIVisualEffectView, SlideMenuOptions.blurEffect != nil {
             blurView.effect = nil
+            blurView.isHidden = true
         } else {
             opacityView.layer.opacity = 0.0
         }
