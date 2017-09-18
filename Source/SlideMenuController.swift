@@ -94,7 +94,7 @@ open class SlideMenuController: UIViewController, UIGestureRecognizerDelegate {
                 animator.startAnimation()
                 animator.pauseAnimation()
                 if startPos == .end {
-                    animator.fractionComplete = 1
+                    animator.fractionComplete = 0.9999
                 }
             }
             addAnimation()
