@@ -25,9 +25,9 @@ public struct SlideMenuOptions {
     public static var contentViewOpacity: CGFloat = 0.5
     public static var blurEffect: UIBlurEffect? = {
         if #available(iOS 10, *) {
-            return UIBlurEffect(style: UIBlurEffectStyle.prominent)
+            return UIBlurEffect(style: UIBlurEffect.Style.prominent)
         } else {
-            return UIBlurEffect(style: UIBlurEffectStyle.dark)
+            return UIBlurEffect(style: UIBlurEffect.Style.dark)
         }
     }()
     public static var contentViewDrag: Bool = false
@@ -174,7 +174,7 @@ open class SlideMenuController: UIViewController, UIGestureRecognizerDelegate {
             blurView.isUserInteractionEnabled = false
             opacityView = blurView
         }
-        opacityView.autoresizingMask = [UIViewAutoresizing.flexibleHeight, UIViewAutoresizing.flexibleWidth]
+        opacityView.autoresizingMask = [.flexibleHeight, .flexibleWidth]
         view.insertSubview(opacityView, at: 1)
 
       
