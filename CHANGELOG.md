@@ -1,3 +1,41 @@
+5.0.0 Release notes (2019-05-30)
+=============================================================
+
+### Enhancements
+* Support Swift5.0
+
+### Bugfixes
+* None.
+
+4.2.0 Release notes (2019-01-11)
+=============================================================
+
+### Enhancements
+* Support Swift4.2
+
+### Bugfixes
+* None.
+
+4.0.0 Release notes (2017-10-31)
+=============================================================
+
+### Enhancements
+* Support Swift4.0
+
+### Bugfixes
+* None.
+
+
+3.0.2 Release notes (2017-08-23)
+=============================================================
+
+### Enhancements
+* Added option `animationOptions`.
+
+### Bugfixes
+* Respect root view controller’s preferredStatusBarStyle.
+
+
 3.0.1 Release notes (2016-12-02)
 =============================================================
 
